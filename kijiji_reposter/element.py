@@ -1,12 +1,31 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+import logging
+
+
+def log_action(func):
+
+    def wrapper(self, msg, *args, **kwargs):
+        has_logger = hasattr(self, "logger")
+        if has_logger:
+            self.logger.info(msg)
+
+        status = func(self, *args, **kwargs)               
+        if not status and has_logger:
+            self.warning("Failed")
+        return status
+
+    return wrapper
 
 
 class BasePageElement(object):
     """Base page class that is initialized on every page object class."""
 
     TIMEOUT = 10
+
+    def __init__(self, logger_name=__name__):
+        self.logger = logging.getLogger(logger_name)
 
     def __set__(self, obj, value):
         """Sets the text to the value specified"""
@@ -27,12 +46,14 @@ class BasePageElement(object):
         return element.get_attribute("value")
         
 
+
 class ClickableElement(BasePageElement):
 
     def __init__(self, locator):
         super().__init__()
         self.locator = locator
 
+    @log_action
     def click(self, driver):
         try:
             clickable_item = WebDriverWait(driver, ClickableElement.TIMEOUT).until(
@@ -51,6 +72,7 @@ class ConfirmationTextElement(BasePageElement):
         super().__init__()
         self.locator = locator
 
+    @log_action
     def confirm(self, driver):
         try:
             WebDriverWait(driver, BasePageElement.TIMEOUT).until(

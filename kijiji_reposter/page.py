@@ -1,12 +1,14 @@
 from element import ClickableElement, ConfirmationTextElement
 from locators import AdsPageLocator
+import logging
 
 
 class BasePage(object):
     """Base class to initialize the base page that will be called from all pages"""
 
-    def __init__(self, driver):
+    def __init__(self, driver, logger_name=__name__):
         self.driver = driver
+        self.logger = logging.getLogger(logger_name)
 
 
 class AdsPage(BasePage):
@@ -24,28 +26,22 @@ class AdsPage(BasePage):
 
 
     def open(self):
+        self.logger.info('Visiting Ads Page')
         self.driver.get(AdsPage.ADS_URL)
 
 
     def delete_first_ad(self):
-#        is_delete_click = self.delete_button.click(self.driver) #self.delete_button.__get__(self, AdsPage)
-#        if not is_delete_click:
-#            print("not found")
-#            return False
-#        is_delete_reason_click = self.delete_reason_button.__get__(self, AdsPage)
-#        is_delete_confirm_click = self.delete_confirm_button.__get__(self, AdsPage)
-#        is_delete_successful = self.delete_successful_text.__get__(self, AdsPage)
-#        is_delete_xwindow_click = self.close_delete_window_button.__get__(self, AdsPage)
-#        print(is_delete_click, is_delete_reason_click, is_delete_confirm_click, is_delete_successful, is_delete_xwindow_click)
-#        print(is_deleted)
-        if self.delete_button.click(self.driver) and \
-            self.delete_reason_button.click(self.driver) and \
-            self.delete_confirm_button.click(self.driver) and \
-            self.delete_successful_text.confirm(self.driver) and \
-            self.close_delete_window_button.click(self.driver):
+        if self.delete_button.click("Clicking delete", self.driver) and \
+            self.delete_reason_button.click('Clicking delete reason', self.driver) and \
+            self.delete_confirm_button.click('Clicking confirm delete', self.driver) and \
+            self.delete_successful_text.confirm('Finding delete confirmation', self.driver) and \
+            self.close_delete_window_button.click('Closing delete window', self.driver):
+#        if self.log_action('Clicking delete', self.delete_button.click, self.driver) and \
+#            self.log_action('Clicking delete reason', self.delete_reason_button.click, self.driver) and \
+#            self.log_action('Clicking confirm delete', self.delete_confirm_button.click, self.driver) and \
+#            self.log_action('Finding delete confirmation', self.delete_successful_text.confirm, self.driver) and \
+#            self.log_action('Closing delete window', self.close_delete_window_button.click, self.driver):
 
-            print("Successful delete")
             return True 
         
-        print("Unsuccessful delete")
         return False
