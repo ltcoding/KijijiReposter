@@ -122,7 +122,7 @@ class KijijiReposter(object):
             posted_ad_id = self.post_ad(ad_config)
             
             if posted_ad_id:
-                self.ad_ids[posted_ad_id[ConfigKeys.AD_ID]] = basedir
+                self.ad_ids[basedir] = posted_ad_id[ConfigKeys.AD_ID]
             cnt += 1
 
         with open(self.ad_ids_filename, 'w') as f:
