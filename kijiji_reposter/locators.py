@@ -22,4 +22,5 @@ class PostAdPageLocator(object):
      SUBMIT_BUTTON = (By.XPATH, "//button[@name='saveAndCheckout']")
      POST_SUCCESS_TEXT = (By.XPATH, "//h3[contains(text(),'success')]")
      IMG_UPLOAD_SUCCESS = (By.XPATH, '//ol[@id="MediaUploadedImages"]//div[@class="spinner animate-spin kj-icon-spin4"]')
+     AD_ID = (By.XPATH, '//a[@class="adId-4111206830"]')
     

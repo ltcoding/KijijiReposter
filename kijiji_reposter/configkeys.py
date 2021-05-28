@@ -10,3 +10,4 @@ class ConfigKeys(object):
     PRICE = 'price'
     CATID = 'categoryId'
     SIZE = 'size'
+    AD_ID = 'adId'

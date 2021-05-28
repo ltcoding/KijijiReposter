@@ -68,6 +68,7 @@ class PostAdPage(BasePage):
 
         self.submit_button = ClickableElement(PostAdPageLocator.SUBMIT_BUTTON)
         self.post_success_text = ConfirmationTextElement(PostAdPageLocator.POST_SUCCESS_TEXT)
+        self.ad_id_text = ConfirmationTextElement(PostAdPageLocator.AD_ID)
 
     def open(self, ad_params=None):
         self.logger.info("Visting Post Ads page")
@@ -76,7 +77,6 @@ class PostAdPage(BasePage):
             url = PostAdPage.URL
         else:
             data = {'categoryId': ad_params[ConfigKeys.CATID], 'adTitle': ad_params[ConfigKeys.TITLE]}
-            print(ad_params[ConfigKeys.CATID])
 
             parsed = urlparse(PostAdPage.URL)._replace(query=urlencode(data))
             url = parsed.geturl()
@@ -84,7 +84,7 @@ class PostAdPage(BasePage):
         self.driver.get(url)
 
 
-    def post_ad(self, ad_params):
+    def post(self, ad_params):
         
         status = True 
         
@@ -107,6 +107,7 @@ class PostAdPage(BasePage):
             self.submit_button.click("Clicking submit button", self.driver) and \
             self.post_success_text.confirm("Confirming post success", self.driver):
 
-            return True 
+            ad_id = self.ad_id_text.confirm('Finding Ad Id', self.driver).text
+            return {ConfigKeys.AD_ID: ad_id}
 
-        return False 
+        return None

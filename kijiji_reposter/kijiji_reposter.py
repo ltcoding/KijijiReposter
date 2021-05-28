@@ -20,9 +20,10 @@ class KijijiReposter(object):
 
     COOKIE_NAME = 'ssid'
     HOMEPAGE = 'https://www.kijiji.ca'
+    AD_IDS_FILENAME = 'ad_ids.yaml'
 
     def __init__(self, cookie_filename='tk.txt', logger_name=__name__, log_filename='kijiji_reposter.log',
-                 log_level=logging.INFO):
+                 log_level=logging.INFO, ad_ids_filename=AD_IDS_FILENAME):
         self.opts = Options()
         # self.opts.add_argument('--start-fullscreen')
         self.opts.add_argument('--start-maximized')
@@ -38,6 +39,9 @@ class KijijiReposter(object):
         self.log_level = log_level
         self.logger_name = logger_name
         self._init_logger()
+
+        self.ad_ids_filename = ad_ids_filename
+        self.load_ad_ids()
         
 
     def _init_logger(self):
@@ -56,6 +60,17 @@ class KijijiReposter(object):
 
         self.logger = logging.getLogger(self.logger_name)
 
+    def load_ad_ids(self):
+
+        if os.path.isfile(self.ad_ids_filename):
+            with open(self.ad_ids_filename, 'r') as f:
+                self.ad_ids = yaml.safe_load(f)
+            if not isinstance(self.ad_ids, dict):
+                self.logger.warn(f'adIds file {self.ad_ids_filename} does not contain dict')
+                self.ad_ids = {}
+        else:
+            self.ad_ids = {}
+        
     @staticmethod
     def load_ad_config(filename):
         with open(filename, 'r') as f:
@@ -90,7 +105,7 @@ class KijijiReposter(object):
     def post_ad(self, ad_config):
         post_ads_page = PostAdPage(self.driver)
         post_ads_page.open(ad_config)
-        post_ads_page.post_ad(ad_config)
+        return post_ads_page.post(ad_config)
 
     def post_all_ads(self, rootdir):
         
@@ -104,8 +119,14 @@ class KijijiReposter(object):
             config_file = os.path.join(basedir, ConfigKeys.CONFIG_FILE)
             ad_config = self.load_ad_config(config_file)
             print(ad_config)
-            self.post_ad(ad_config)
+            posted_ad_id = self.post_ad(ad_config)
+            
+            if posted_ad_id:
+                self.ad_ids[posted_ad_id[ConfigKeys.AD_ID]] = basedir
             cnt += 1
+
+        with open(self.ad_ids_filename, 'w') as f:
+           yaml.safe_dump(self.ad_ids, f, default_style=None, default_flow_style=False) 
 
     def ls_config_files(self, rootdir):
         config_files = [

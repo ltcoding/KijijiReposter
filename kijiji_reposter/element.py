@@ -62,9 +62,9 @@ class ClickableElement(BasePageElement):
             )
             clickable_item.click()
         except TimeoutException as ex:
-            return False
+            return None 
 
-        return True
+        return clickable_item 
 
 
 class ConfirmationTextElement(BasePageElement):
@@ -76,13 +76,13 @@ class ConfirmationTextElement(BasePageElement):
     @log_action
     def confirm(self, driver):
         try:
-            WebDriverWait(driver, BasePageElement.TIMEOUT).until(
+            elem = WebDriverWait(driver, BasePageElement.TIMEOUT).until(
                 EC.presence_of_element_located(self.locator)
             )
         except TimeoutException as ex:
-            return False
+            return None 
 
-        return True
+        return elem 
 
 
 class TextFormElement(BasePageElement):
@@ -100,9 +100,9 @@ class TextFormElement(BasePageElement):
             text_form.clear()
             text_form.send_keys(text)
         except TimeoutException as ex:
-            return False
+            return None 
 
-        return True
+        return text_form
 
 class DropdownElement(BasePageElement):
 
@@ -120,9 +120,9 @@ class DropdownElement(BasePageElement):
             dropdown_select = Select(dropdown)
             dropdown_select.select_by_visible_text(value)
         except TimeoutException as ex:
-            return False
+            return None
 
-        return True
+        return dropdown
 
 
 class FileUploadButtonElement(BasePageElement):
@@ -140,9 +140,9 @@ class FileUploadButtonElement(BasePageElement):
             )
             input_element.send_keys(value)
         except TimeoutException as ex:
-            return False
+            return None
 
-        return True
+        return input_element
 
 
 class AppearDisappearElement(BasePageElement):
@@ -164,7 +164,6 @@ class AppearDisappearElement(BasePageElement):
             elems = WebDriverWait(driver, timeout_).until(
                 EC.presence_of_element_located(self.locator)
             )
-            print('found one')
             elems = WebDriverWait(driver, timeout).until(
                 EC.invisibility_of_element_located(self.locator)
             )
