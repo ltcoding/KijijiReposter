@@ -3,6 +3,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.common.exceptions import TimeoutException
 import logging
+import time
 
 
 def log_action(func):
@@ -147,6 +148,8 @@ class FileUploadButtonElement(BasePageElement):
 
 class AppearDisappearElement(BasePageElement):
     
+    APPEAR_TIME = 4
+
     def __init__(self, locator):
         super().__init__()
         self.locator = locator
@@ -161,9 +164,10 @@ class AppearDisappearElement(BasePageElement):
         timeout_ = max(timeout, BasePageElement.TIMEOUT)
 
         try:
-            elems = WebDriverWait(driver, timeout_).until(
-                EC.presence_of_element_located(self.locator)
-            )
+            #elems = WebDriverWait(driver, timeout_).until(
+            #    EC.presence_of_element_located(self.locator)
+            #)
+            time.sleep(self.APPEAR_TIME)
             elems = WebDriverWait(driver, timeout).until(
                 EC.invisibility_of_element_located(self.locator)
             )
