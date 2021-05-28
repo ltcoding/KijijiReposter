@@ -135,9 +135,6 @@ class FileUploadButtonElement(BasePageElement):
     def upload_files(self, driver, value):
     
         try:
-            #input_element = WebDriverWait(driver, BasePageElement.TIMEOUT).until(
-            #    EC.element_to_be_clickable(self.locator)
-            #)
             input_element = WebDriverWait(driver, BasePageElement.TIMEOUT).until(
                 EC.presence_of_element_located(self.locator)
             )
@@ -148,31 +145,30 @@ class FileUploadButtonElement(BasePageElement):
         return True
 
 
-class ConfirmPresenceNElems(BasePageElement):
-
-    TIMEOUT_PER_IMG = 5 
-
+class AppearDisappearElement(BasePageElement):
+    
     def __init__(self, locator):
         super().__init__()
         self.locator = locator
 
     @log_action
-    def confirm(self, driver, num_elems):
-    
-        timeout = max(self.TIMEOUT_PER_IMG * num_elems, BasePageElement.TIMEOUT)
+    def confirm(self, driver, timeout=BasePageElement.TIMEOUT):
+        """
+        Confirms that an element appears then becomes invisible. 
+        Useful for progress bars etc
+        """
+
+        timeout_ = max(timeout, BasePageElement.TIMEOUT)
+
         try:
-            elems = WebDriverWait(driver, timeout).until(
+            elems = WebDriverWait(driver, timeout_).until(
                 EC.presence_of_element_located(self.locator)
             )
+            print('found one')
             elems = WebDriverWait(driver, timeout).until(
                 EC.invisibility_of_element_located(self.locator)
             )
-            #elems = WebDriverWait(driver, timeout).until(
-            #    EC.presence_of_all_elements_located(self.locator)
-            #)
         except TimeoutException as ex:
             return False
 
         return True
-        #print(len(elems), num_elems)
-        #return True if len(elems) == num_elems else False

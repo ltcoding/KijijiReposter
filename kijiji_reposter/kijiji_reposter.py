@@ -94,11 +94,6 @@ class KijijiReposter(object):
 
     def post_all_ads(self, rootdir):
         
-#        config_files = self.ls_config_files(rootdir)
-#        for config_file in config_files:
-#            ad_config = self.load_ad_config(config_file)
-#            self.post_ad(ad_config)
-
         cnt = 1
         for basedir, subdirs, files in os.walk(rootdir):
             print(basedir, subdirs, files)

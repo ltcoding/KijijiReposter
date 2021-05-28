@@ -1,13 +1,11 @@
 from element import ClickableElement, ConfirmationTextElement, FileUploadButtonElement
-from element import TextFormElement, DropdownElement, ConfirmPresenceNElems
+from element import TextFormElement, DropdownElement, AppearDisappearElement 
 from locators import AdsPageLocator, PostAdPageLocator
 from configkeys import ConfigKeys
 import logging
 import time
 
 from urllib.parse import urlencode
-#from urllib.parse import urlunparse
-#from urllib.parse import urljoin
 from urllib.parse import urlparse
 
 
@@ -53,6 +51,7 @@ class AdsPage(BasePage):
 class PostAdPage(BasePage):
 
     URL = 'https://www.kijiji.ca/p-admarkt-post-ad.html'
+    TIME_PER_UPLOAD = 5 
 
     def __init__(self, driver, ad_params=None):
         super().__init__(driver)
@@ -65,7 +64,7 @@ class PostAdPage(BasePage):
 
         self.size_dropdown = DropdownElement(PostAdPageLocator.SIZE_DROPDOWN)
         self.file_upload_button = FileUploadButtonElement(PostAdPageLocator.FILE_UPLOAD_BUTTON)
-        self.img_upload_success = ConfirmPresenceNElems(PostAdPageLocator.IMG_UPLOAD_SUCCESS)
+        self.img_upload_success = AppearDisappearElement(PostAdPageLocator.IMG_UPLOAD_SUCCESS)
 
         self.submit_button = ClickableElement(PostAdPageLocator.SUBMIT_BUTTON)
         self.post_success_text = ConfirmationTextElement(PostAdPageLocator.POST_SUCCESS_TEXT)
@@ -78,21 +77,10 @@ class PostAdPage(BasePage):
         else:
             data = {'categoryId': ad_params[ConfigKeys.CATID], 'adTitle': ad_params[ConfigKeys.TITLE]}
             print(ad_params[ConfigKeys.CATID])
-            #print(len(ad_params[ConfigKeys.CATID]), ad_params[ConfigKeys.CATID])
 
             parsed = urlparse(PostAdPage.URL)._replace(query=urlencode(data))
             url = parsed.geturl()
-            #url = urljoin(PostAdPage.URL, urlencode(data))
 
-        #if ad_params:
-        #    url = PostAdPage.URL_FORMAT.format(
-        #        categoryId=ad_params[ConfigKeys.CATID], 
-        #        adTitle=ad_params[ConfigKeys.TITLE]
-        #    )
-        #else:
-        #    url = PostAdPage.URL
-        # url = PostAdPage.URL
-        print(url)
         self.driver.get(url)
 
 
@@ -100,52 +88,25 @@ class PostAdPage(BasePage):
         
         status = True 
         
-        print(self.driver.title)
         if ad_params.get(ConfigKeys.CURBSIDE, False):
             status = self.curbside_button.click("Clicking curbside button", self.driver) and status
-            self.driver.save_screenshot('curbside.png')
         if ad_params.get(ConfigKeys.CASHLESS, False):
             status = self.cashless_button.click("Clicking cashless button", self.driver) and status
-            self.driver.save_screenshot('cashless.png')
         if ad_params.get(ConfigKeys.SIZE, False):
             status = self.size_dropdown.select_dropdown(
                 "Selecting size in dropdown", self.driver, ad_params[ConfigKeys.SIZE]) and status
-            self.driver.save_screenshot('dropdown.png')
 
         imgs = '\n'.join(ad_params[ConfigKeys.IMGS])
-        self.desc_body.fill_text_form("Filling description text", self.driver, ad_params[ConfigKeys.DESC])
-        self.driver.save_screenshot('desc_txt.png')
-        self.price_text.fill_text_form("Filling price text", self.driver, ad_params[ConfigKeys.PRICE])
-        self.driver.save_screenshot('price.png')
-        print(ad_params[ConfigKeys.IMGS])
-        self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs)
-        #time.sleep(10)
         nimg = len(ad_params[ConfigKeys.IMGS])
-        self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg)
-        #ele = self.driver.find_element("xpath", '//div[@class="react-grid-layout layout"]')
-        #total_height = ele.size["height"] + 1000
-        #self.driver.set_window_size(1920, total_height)
-        #el = self.driver.find_element_by_tag_name('body')
-        #el.screenshot('uploaded.png')
-        #time.sleep(2)
-        #self.driver.find_element("xpath", "//li/div[@class='image-area']")
-        #self.driver.find_element("xpath", "//h3[text()='Add photos to attract interest to your ad']")
-        
-        #time.sleep(2)
-        self.driver.save_screenshot('upload_files.png')
-        self.submit_button.click("Clicking submit button", self.driver)
-        #time.sleep(10)
-        self.post_success_text.confirm("Confirming post success", self.driver)
-        self.driver.save_screenshot('after_submit.png')
 
-#        if status and \
-#            self.desc_body.fill_text_form("Filling description text", self.driver, ad_params[ConfigKeys.DESC]) and \
-#            self.price_text.fill_text_form("Filling price text", self.driver, ad_params[ConfigKeys.PRICE]) and \
-#            self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs) and \
-#            self.submit_button.click("Clicking submit button", self.driver):
-#
-#            self.driver.save_screenshot('hello.png')
-#            
-#            return True 
+        if status and \
+            self.desc_body.fill_text_form("Filling description text", self.driver, ad_params[ConfigKeys.DESC]) and \
+            self.price_text.fill_text_form("Filling price text", self.driver, ad_params[ConfigKeys.PRICE]) and \
+            self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs) and \
+            self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg * self.TIME_PER_UPLOAD) and \
+            self.submit_button.click("Clicking submit button", self.driver) and \
+            self.post_success_text.confirm("Confirming post success", self.driver):
+
+            return True 
 
         return False 
