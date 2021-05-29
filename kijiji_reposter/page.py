@@ -1,12 +1,16 @@
 from element import ClickableElement, ConfirmationTextElement, FileUploadButtonElement
-from element import TextFormElement, DropdownElement, AppearDisappearElement 
+from element import TextFormElement, DropdownElement, AppearDisappearElement, NTextElements 
 from locators import AdsPageLocator, PostAdPageLocator
 from configkeys import ConfigKeys
 import logging
 import time
 
+from selenium.webdriver.common.by import By
+
 from urllib.parse import urlencode
 from urllib.parse import urlparse
+
+import adstats
 
 
 class BasePage(object):
@@ -21,6 +25,7 @@ class AdsPage(BasePage):
     """Page to view current ads"""
 
     ADS_URL = 'https://www.kijiji.ca/m-my-ads/active/1'
+    STATS_NAMES = {''}
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -30,22 +35,61 @@ class AdsPage(BasePage):
         self.delete_success_text = ConfirmationTextElement(AdsPageLocator.DELETE_SUCCESS_TEXT)
         self.close_delete_window_button = ClickableElement(AdsPageLocator.XWINDOW_DELETE_BUTTON)
 
+        self.title_text = ConfirmationTextElement(AdsPageLocator.TITLE)
+        self.stats_container = ConfirmationTextElement(AdsPageLocator.STATS_CONTAINER)
+        self.date_posted_text = ConfirmationTextElement(AdsPageLocator.POSTED_DATE)
+        self.price_text = ConfirmationTextElement(AdsPageLocator.PRICE)
 
     def open(self):
         self.logger.info('Visiting Ads page')
         self.driver.get(AdsPage.ADS_URL)
 
+    def get_stats(self):
+        
+        default_val = {}
+
+        title_elem = self.title_text.confirm("Finding title", self.driver)
+        if not title_elem:
+            return default_val
+        
+        stats_all = self.stats_container.confirm("Recording ad stats", self.driver)
+        if not stats_all:
+            return default_val
+
+        date_posted = self.date_posted_text.confirm("Finding original date posted", self.driver)
+        if not date_posted:
+            return default_val
+
+        price = self.price_text.confirm("Finding ad price", self.driver)
+        if not price:
+            return default_val
+
+        stats = [x.text for x in stats_all.find_elements(*AdsPageLocator.INNER_STATS)]
+
+        return_val =  {
+            adstats.TITLE: title_elem.text.strip(),
+            adstats.PRICE: price.text.strip(),
+            adstats.DATE_POSTED: date_posted.text.strip(), 
+            adstats.VIEWS: stats[AdsPageLocator.VIEWS],
+            adstats.REPLIES: stats[AdsPageLocator.REPLIES],
+            adstats.PAGE_NO: stats[AdsPageLocator.PAGE_NO]
+        }
+        print(return_val)
+        return return_val
 
     def delete_first_ad(self):
+
+        stats = self.get_stats()
+
         if self.delete_button.click("Clicking delete", self.driver) and \
             self.delete_reason_button.click('Clicking delete reason', self.driver) and \
             self.delete_confirm_button.click('Clicking confirm delete', self.driver) and \
             self.delete_success_text.confirm('Finding delete confirmation', self.driver) and \
             self.close_delete_window_button.click('Closing delete window', self.driver):
 
-            return True 
+            return stats
         
-        return False
+        return None
 
 
 class PostAdPage(BasePage):

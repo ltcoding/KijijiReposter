@@ -68,6 +68,24 @@ class ClickableElement(BasePageElement):
         return clickable_item 
 
 
+class NTextElements(BasePageElement):
+
+    def __init__(self, locator):
+        super().__init__()
+        self.locator = locator
+
+    @log_action
+    def get(self, driver):
+        try:
+            elems = WebDriverWait(driver, BasePageElement.TIMEOUT).until(
+                EC.presence_of_all_elements_located(self.locator)
+            )
+        except TimeoutException as ex:
+            return None
+
+        return elems
+
+
 class ConfirmationTextElement(BasePageElement):
 
     def __init__(self, locator):
@@ -77,7 +95,7 @@ class ConfirmationTextElement(BasePageElement):
     @log_action
     def confirm(self, driver):
         try:
-            elem = WebDriverWait(driver, BasePageElement.TIMEOUT).until(
+            elem = WebDriverWait(driver, ConfirmationTextElement.TIMEOUT).until(
                 EC.presence_of_element_located(self.locator)
             )
         except TimeoutException as ex:

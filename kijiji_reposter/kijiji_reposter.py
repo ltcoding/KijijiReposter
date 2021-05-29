@@ -5,6 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC 
 from page import AdsPage, PostAdPage
+import adstats
+
 import logging
 from datetime import datetime
 import os
@@ -12,6 +14,7 @@ import sys
 import argparse
 
 import yaml
+import csv
 
 from configkeys import ConfigKeys
 
@@ -21,6 +24,8 @@ class KijijiReposter(object):
     COOKIE_NAME = 'ssid'
     HOMEPAGE = 'https://www.kijiji.ca'
     AD_IDS_FILENAME = 'ad_ids.yaml'
+    STATS_FILENAME = 'stats.csv'
+    TITLE2DIR_FILENAME = 'title2dir.json'
 
     def __init__(self, cookie_filename='tk.txt', logger_name=__name__, log_filename='kijiji_reposter.log',
                  log_level=logging.INFO, ad_ids_filename=AD_IDS_FILENAME):
@@ -43,6 +48,8 @@ class KijijiReposter(object):
         self.ad_ids_filename = ad_ids_filename
         self.load_ad_ids()
         
+        self.title2dir = {}
+
 
     def _init_logger(self):
         
@@ -92,6 +99,21 @@ class KijijiReposter(object):
             for key, val in ad_config.items()}
         return res
 
+    def walk(self, rootdir):
+        
+        for basedir, subdirs, files in os.walk(rootdir):
+            if ConfigKeys.CONFIG_FILE not in files:
+                continue
+            config_file = os.path.join(basedir, ConfigKeys.CONFIG_FILE)
+            ad_config = self.load_ad_config(config_file)
+
+            yield (basedir, subdirs, files, ad_config)
+
+    def load_title2dir(self, rootdir):
+        
+        for basedir, subdirs, files, ad_config in self.walk(rootdir):
+            title = ad_config.get(ConfigKeys.TITLE, '').strip()
+            self.title2dir[title] = basedir
 
     def login(self):
         self.logger.info('Connecting to homepage')
@@ -110,14 +132,11 @@ class KijijiReposter(object):
     def post_all_ads(self, rootdir):
         
         cnt = 1
-        for basedir, subdirs, files in os.walk(rootdir):
+
+        for basedir, subdirs, files, ad_config in self.walk(rootdir):
             print(basedir, subdirs, files)
-            if ConfigKeys.CONFIG_FILE not in files:
-                continue
 
             self.logger.info(f"Posting ad number {cnt}")
-            config_file = os.path.join(basedir, ConfigKeys.CONFIG_FILE)
-            ad_config = self.load_ad_config(config_file)
             print(ad_config)
             posted_ad_id = self.post_ad(ad_config)
             
@@ -135,10 +154,29 @@ class KijijiReposter(object):
         ]
         return config_files
 
-    def delete_all_ads(self):
+    def delete_all_ads(self, rootdir):
+
         ads_page = AdsPage(self.driver)
         ads_page.open()
-        ads_page.delete_first_ad()
+
+        self.load_title2dir(rootdir)
+        print(self.title2dir)
+        
+        for i in range(2):
+        
+            stats = ads_page.delete_first_ad()
+            if not stats:
+                break
+        
+            filename = os.path.join(
+                self.title2dir[stats[adstats.TITLE]], KijijiReposter.STATS_FILENAME
+            )
+            is_file_exists = os.path.isfile(filename)
+            with open(filename, 'a') as f:
+                writer = csv.DictWriter(f, fieldnames=adstats.schema)
+                if not is_file_exists:
+                    writer.writeheader()
+                writer.writerow(stats)
 
     def cleanup(self):
         self.driver.delete_cookie(KijijiReposter.COOKIE_NAME)
@@ -146,7 +184,7 @@ class KijijiReposter(object):
 
     def repost(self, rootdir):
         self.login()
-        # self.delete_all_ads()
+        #self.delete_all_ads(rootdir)
         self.post_all_ads(rootdir)
         self.cleanup()
 
