@@ -1,14 +1,12 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC 
 from page import AdsPage, PostAdPage
 import adstats
 
 import logging
-# from datetime import datetime
 import datetime
 import os
 import sys
@@ -136,10 +134,8 @@ class KijijiReposter(object):
         cnt = 1
 
         for basedir, subdirs, files, ad_config in self.walk(rootdir):
-            print(basedir, subdirs, files)
 
-            self.logger.info(f"Posting ad number {cnt}")
-            print(ad_config)
+            self.logger.info(f"Posting ad number {cnt}: {ad_config[ConfigKeys.TITLE]}")
             posted_ad_id = self.post_ad(ad_config)
             
             if posted_ad_id:
@@ -184,16 +180,19 @@ class KijijiReposter(object):
         ads_page.open()
 
         self.load_title2dir(rootdir)
-        print(self.title2dir)
         
-        for i in range(2):
-            self.logger.info(f"Deleting ad {i}")
+        #for i in range(5):
+        i = 0
+        while True:
+            i += 1
+            self.logger.info(f"Deleting ad {i + 1}")
 
             stats = ads_page.delete_first_ad()
             if not stats:
                 break
             self._process_stats(stats)
-            print(stats)
+            
+            # self.logger.info(f"Deleted {stats[adstats.TITLE]}")
             filename = os.path.join(
                 self.title2dir[stats[adstats.TITLE]], KijijiReposter.STATS_FILENAME
             )
@@ -210,7 +209,7 @@ class KijijiReposter(object):
 
     def repost(self, rootdir):
         self.login()
-        # self.delete_all_ads(rootdir)
+        self.delete_all_ads(rootdir)
         self.post_all_ads(rootdir)
         self.cleanup()
 

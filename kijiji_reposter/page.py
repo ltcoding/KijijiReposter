@@ -52,6 +52,7 @@ class AdsPage(BasePage):
         title_elem = self.title_text.confirm("Finding title", self.driver)
         if not title_elem:
             return default_val
+        self.logger.info(f"Deleting ad {title_elem.text}")
         
         stats_all = self.stats_container.confirm("Recording ad stats", self.driver)
         if not stats_all:
