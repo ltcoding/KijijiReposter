@@ -8,7 +8,8 @@ from page import AdsPage, PostAdPage
 import adstats
 
 import logging
-from datetime import datetime
+# from datetime import datetime
+import datetime
 import os
 import sys
 import argparse
@@ -26,6 +27,7 @@ class KijijiReposter(object):
     AD_IDS_FILENAME = 'ad_ids.yaml'
     STATS_FILENAME = 'stats.csv'
     TITLE2DIR_FILENAME = 'title2dir.json'
+    DATE_FORMAT = '%Y-%m-%d'
 
     def __init__(self, cookie_filename='tk.txt', logger_name=__name__, log_filename='kijiji_reposter.log',
                  log_level=logging.INFO, ad_ids_filename=AD_IDS_FILENAME):
@@ -54,7 +56,7 @@ class KijijiReposter(object):
     def _init_logger(self):
         
         basename, ext = os.path.splitext(self.log_filename)
-        filename = '_'.join([basename, datetime.today().strftime('%Y%m%d_%H%M%S')])
+        filename = '_'.join([basename, datetime.datetime.today().strftime('%Y%m%d_%H%M%S')])
 
         file_handler = logging.FileHandler(filename=filename + ext)
         stdout_handler = logging.StreamHandler(sys.stdout)
@@ -147,12 +149,34 @@ class KijijiReposter(object):
         with open(self.ad_ids_filename, 'w') as f:
            yaml.safe_dump(self.ad_ids, f, default_style=None, default_flow_style=False) 
 
-    def ls_config_files(self, rootdir):
-        config_files = [
-            os.path.join(root, filename) for (root, dirs, files) in os.walk(rootdir) \
-               for filename in files if filename == 'ad_config.yaml'
-        ]
-        return config_files
+    @staticmethod
+    def _add_year2date(kijiji_date, year):
+        s = str(year) + ' ' + kijiji_date
+        return datetime.datetime.strptime(s, AdsPage.DATE_FORMAT)
+
+    @staticmethod
+    def kijijidate2datetime(kijiji_date):
+        
+        today = datetime.datetime.today()
+        year = today.year
+
+        candidate_date = KijijiReposter._add_year2date(kijiji_date, year)
+        candidate_date = candidate_date if candidate_date <= today else \
+            KijijiReposter._add_year2date(kijiji_date, year - 1)
+
+        return candidate_date.strftime(KijijiReposter.DATE_FORMAT)
+
+    def _process_stats(self, stats):
+
+        config_file = os.path.join(self.title2dir[stats[adstats.TITLE]], 
+            ConfigKeys.CONFIG_FILE)
+        imgs = self.load_ad_config(config_file)[ConfigKeys.IMGS]
+        
+        stats[adstats.MAIN_IMG] = os.path.basename(imgs[0]) if imgs else ''
+        stats[adstats.DATE_DELETED] = datetime.datetime.today().strftime(
+            KijijiReposter.DATE_FORMAT)
+        stats[adstats.DATE_POSTED] = KijijiReposter.kijijidate2datetime(
+            stats[adstats.DATE_POSTED])
 
     def delete_all_ads(self, rootdir):
 
@@ -163,11 +187,13 @@ class KijijiReposter(object):
         print(self.title2dir)
         
         for i in range(2):
-        
+            self.logger.info(f"Deleting ad {i}")
+
             stats = ads_page.delete_first_ad()
             if not stats:
                 break
-        
+            self._process_stats(stats)
+            print(stats)
             filename = os.path.join(
                 self.title2dir[stats[adstats.TITLE]], KijijiReposter.STATS_FILENAME
             )
@@ -184,7 +210,7 @@ class KijijiReposter(object):
 
     def repost(self, rootdir):
         self.login()
-        #self.delete_all_ads(rootdir)
+        # self.delete_all_ads(rootdir)
         self.post_all_ads(rootdir)
         self.cleanup()
 

@@ -166,7 +166,7 @@ class FileUploadButtonElement(BasePageElement):
 
 class AppearDisappearElement(BasePageElement):
     
-    APPEAR_TIME = 4
+    APPEAR_TIME = 5 
 
     def __init__(self, locator):
         super().__init__()

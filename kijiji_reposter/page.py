@@ -26,6 +26,7 @@ class AdsPage(BasePage):
 
     ADS_URL = 'https://www.kijiji.ca/m-my-ads/active/1'
     STATS_NAMES = {''}
+    DATE_FORMAT = '%Y %b %d'
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -68,13 +69,13 @@ class AdsPage(BasePage):
 
         return_val =  {
             adstats.TITLE: title_elem.text.strip(),
-            adstats.PRICE: price.text.strip(),
+            adstats.PRICE: price.text[1:].strip(), # remove dollar sign
             adstats.DATE_POSTED: date_posted.text.strip(), 
             adstats.VIEWS: stats[AdsPageLocator.VIEWS],
             adstats.REPLIES: stats[AdsPageLocator.REPLIES],
             adstats.PAGE_NO: stats[AdsPageLocator.PAGE_NO]
         }
-        print(return_val)
+        # print(return_val)
         return return_val
 
     def delete_first_ad(self):
@@ -86,7 +87,7 @@ class AdsPage(BasePage):
             self.delete_confirm_button.click('Clicking confirm delete', self.driver) and \
             self.delete_success_text.confirm('Finding delete confirmation', self.driver) and \
             self.close_delete_window_button.click('Closing delete window', self.driver):
-
+            
             return stats
         
         return None
