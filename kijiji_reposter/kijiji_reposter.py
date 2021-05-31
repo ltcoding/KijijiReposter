@@ -181,7 +181,7 @@ class KijijiReposter(object):
 
         self.load_title2dir(rootdir)
         
-        #for i in range(5):
+        #for i in range(6):
         i = 0
         while True:
             i += 1
@@ -207,10 +207,12 @@ class KijijiReposter(object):
         self.driver.delete_cookie(KijijiReposter.COOKIE_NAME)
         self.driver.close()
 
-    def repost(self, rootdir):
+    def repost(self, rootdir, delete_all=False, is_post=False):
         self.login()
-        self.delete_all_ads(rootdir)
-        self.post_all_ads(rootdir)
+        if delete_all:
+            self.delete_all_ads(rootdir)
+        if is_post:
+            self.post_all_ads(rootdir)
         self.cleanup()
 
 
@@ -226,8 +228,22 @@ if __name__ == '__main__':
                         default='',
                         type=str)
 
+    parser.add_argument('-d', '--delete_all', 
+                        help="""Flag to delete all currently posted ads""", 
+                        required=False,
+                        action='store_true')
+
+    parser.add_argument('-p', '--post', 
+                        help="""Flag to post ads""", 
+                        required=False,
+                        action='store_true')
+
     arg = parser.parse_args()
 
     kr = KijijiReposter()
-    kr.repost(rootdir=arg.rootdir)
+    kr.repost(
+        rootdir=arg.rootdir,
+        delete_all=arg.delete_all,
+        is_post=arg.post
+    )
 

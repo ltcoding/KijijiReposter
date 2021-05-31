@@ -83,12 +83,20 @@ class AdsPage(BasePage):
 
         stats = self.get_stats()
 
-        if self.delete_button.click("Clicking delete", self.driver) and \
-            self.delete_reason_button.click('Clicking delete reason', self.driver) and \
-            self.delete_confirm_button.click('Clicking confirm delete', self.driver) and \
-            self.delete_success_text.confirm('Finding delete confirmation', self.driver) and \
+        if not self.delete_button.click("Clicking delete", self.driver) or \
+            not self.delete_reason_button.click('Clicking delete reason', self.driver) or \
+            not self.delete_confirm_button.click('Clicking confirm delete', self.driver):
+
+            return None
+
+        if self.delete_success_text.confirm('Finding delete confirmation', self.driver) and \
             self.close_delete_window_button.click('Closing delete window', self.driver):
             
+            return stats
+        elif self.close_delete_window_button.click('Closing delete window', self.driver):
+            # Ad (usually) deleted but error message. Refresh page
+            self.open() 
+
             return stats
         
         return None
