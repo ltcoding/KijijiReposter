@@ -132,8 +132,16 @@ class PostAdPage(BasePage):
 
     def post(self, ad_params):
         
-        status = True 
-        
+        imgs = '\n'.join(ad_params[ConfigKeys.IMGS])
+        nimg = len(ad_params[ConfigKeys.IMGS])
+
+        status = self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs)
+        status = status and \
+            self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg * self.TIME_PER_UPLOAD)
+
+        if not status:
+            return None
+
         if ad_params.get(ConfigKeys.CURBSIDE, False):
             status = self.curbside_button.click("Clicking curbside button", self.driver) and status
         if ad_params.get(ConfigKeys.CASHLESS, False):
@@ -142,17 +150,12 @@ class PostAdPage(BasePage):
             status = self.size_dropdown.select_dropdown(
                 "Selecting size in dropdown", self.driver, ad_params[ConfigKeys.SIZE]) and status
 
-        imgs = '\n'.join(ad_params[ConfigKeys.IMGS])
-        nimg = len(ad_params[ConfigKeys.IMGS])
-
         if status and \
             self.desc_body.fill_text_form("Filling description text", self.driver, ad_params[ConfigKeys.DESC]) and \
             self.price_text.fill_text_form("Filling price text", self.driver, ad_params[ConfigKeys.PRICE]) and \
-            self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs) and \
-            self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg * self.TIME_PER_UPLOAD) and \
             self.submit_button.click("Clicking submit button", self.driver) and \
             self.post_success_text.confirm("Confirming post success", self.driver):
-
+            
             ad_id = self.ad_id_text.confirm('Finding Ad Id', self.driver).text
             return {ConfigKeys.AD_ID: ad_id}
 
