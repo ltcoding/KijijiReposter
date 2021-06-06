@@ -140,15 +140,7 @@ class PostAdPage(BasePage):
 
     def post(self, ad_params):
         
-        imgs = '\n'.join(ad_params[ConfigKeys.IMGS])
-        nimg = len(ad_params[ConfigKeys.IMGS])
-
-        status = self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs)
-        status = status and \
-            self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg * self.TIME_PER_UPLOAD)
-
-        if not status:
-            return None
+        status = True
 
         if ad_params.get(ConfigKeys.CURBSIDE, False):
             status = self.curbside_button.click("Clicking curbside button", self.driver) and status
@@ -157,6 +149,16 @@ class PostAdPage(BasePage):
         if ad_params.get(ConfigKeys.SIZE, False):
             status = self.size_dropdown.select_dropdown(
                 "Selecting size in dropdown", self.driver, ad_params[ConfigKeys.SIZE]) and status
+        
+        imgs = '\n'.join(ad_params[ConfigKeys.IMGS])
+        nimg = len(ad_params[ConfigKeys.IMGS])
+
+        status = self.file_upload_button.upload_files("Uploading pictures", self.driver, imgs) and status
+        status = status and \
+            self.img_upload_success.confirm("Confirming images uploaded", self.driver, nimg * self.TIME_PER_UPLOAD)
+
+        if not status:
+            return None
 
         if status and \
             self.desc_body.fill_text_form("Filling description text", self.driver, ad_params[ConfigKeys.DESC]) and \

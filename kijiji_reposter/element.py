@@ -88,6 +88,8 @@ class NTextElements(BasePageElement):
 
 class ConfirmationTextElement(BasePageElement):
 
+    TIMEOUT = 6
+
     def __init__(self, locator):
         super().__init__()
         self.locator = locator
@@ -166,7 +168,7 @@ class FileUploadButtonElement(BasePageElement):
 
 class AppearDisappearElement(BasePageElement):
     
-    APPEAR_TIME = 5.5 
+    APPEAR_TIME = 6
 
     def __init__(self, locator):
         super().__init__()
