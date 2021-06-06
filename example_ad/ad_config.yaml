@@ -1,0 +1,10 @@
+adTitle: Pikachu For Sale 
+cashless: true
+# categoryId can be found in the query string of the Post Ad page
+categoryId: 14654005
+curbSide: true
+description: Caught on my walk to work.  Open to trades for Charmander
+imgs:
+- pikachu1.png
+- pikachu2.jpg
+price: 100
