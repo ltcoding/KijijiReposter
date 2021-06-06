@@ -1,8 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC 
 from page import AdsPage, PostAdPage
 import adstats
 
@@ -26,16 +24,17 @@ class KijijiReposter(object):
     STATS_FILENAME = 'stats.csv'
     TITLE2DIR_FILENAME = 'title2dir.json'
     DATE_FORMAT = '%Y-%m-%d'
+    MAX_LEN_TITLE = 64
+    DRIVER_PAGE_TIMEOUT = 60
 
     def __init__(self, cookie_filename='tk.txt', logger_name=__name__, log_filename='kijiji_reposter.log',
-                 log_level=logging.INFO, ad_ids_filename=AD_IDS_FILENAME):
-        self.opts = Options()
-        # self.opts.add_argument('--start-fullscreen')
-        self.opts.add_argument('--start-maximized')
-        # self.opts.headless = True
+                 log_level=logging.INFO, ad_ids_filename=AD_IDS_FILENAME, is_track=False):
 
-#        self.driver = webdriver.Firefox(options=opts)
+        self.opts = Options()
+        self.opts.add_argument('--start-maximized')
+
         self.driver = webdriver.Chrome(options=self.opts)
+        self.driver.set_page_load_timeout(KijijiReposter.DRIVER_PAGE_TIMEOUT)
 
         self.cookie_filename = cookie_filename
         self.cookie = None
@@ -49,6 +48,8 @@ class KijijiReposter(object):
         self.load_ad_ids()
         
         self.title2dir = {}
+
+        self.is_track = is_track
 
 
     def _init_logger(self):
@@ -83,6 +84,11 @@ class KijijiReposter(object):
         with open(filename, 'r') as f:
             ad_config = yaml.safe_load(f)
         
+        if len(ad_config[ConfigKeys.TITLE]) > KijijiReposter.MAX_LEN_TITLE:
+            self.logger.warn("Title being truncated to max length")
+            ad_config[ConfigKeys.TITLE] = \
+                ad_config[ConfigKeys.TITLE][:KijijiReposter.MAX_LEN_TITLE]
+
         if ConfigKeys.IMGS not in ad_config:
             return ad_config
         if len(ad_config[ConfigKeys.IMGS]) == 0:
@@ -116,7 +122,9 @@ class KijijiReposter(object):
             self.title2dir[title] = basedir
 
     def login(self):
+        
         self.logger.info('Connecting to homepage')
+
         self.driver.get(KijijiReposter.HOMEPAGE)
         if self.cookie is None:
             self.logger.info('Reading cookie file')
@@ -125,6 +133,7 @@ class KijijiReposter(object):
         self.driver.add_cookie({'name': KijijiReposter.COOKIE_NAME, 'value': self.cookie})
 
     def post_ad(self, ad_config):
+        
         post_ads_page = PostAdPage(self.driver)
         post_ads_page.open(ad_config)
         return post_ads_page.post(ad_config)
@@ -152,7 +161,8 @@ class KijijiReposter(object):
 
     @staticmethod
     def kijijidate2datetime(kijiji_date):
-        
+        """Convert kijiji formatted date (month and day) to datetime"""
+
         today = datetime.datetime.today()
         year = today.year
 
@@ -174,6 +184,20 @@ class KijijiReposter(object):
         stats[adstats.DATE_POSTED] = KijijiReposter.kijijidate2datetime(
             stats[adstats.DATE_POSTED])
 
+    def write_stats(self, stats):
+        
+        self._process_stats(stats)
+            
+        filename = os.path.join(
+            self.title2dir[stats[adstats.TITLE]], KijijiReposter.STATS_FILENAME
+        )
+        is_file_exists = os.path.isfile(filename)
+        with open(filename, 'a') as f:
+            writer = csv.DictWriter(f, fieldnames=adstats.schema)
+            if not is_file_exists:
+                writer.writeheader()
+            writer.writerow(stats)
+
     def delete_all_ads(self, rootdir):
 
         ads_page = AdsPage(self.driver)
@@ -181,27 +205,18 @@ class KijijiReposter(object):
 
         self.load_title2dir(rootdir)
         
-        #for i in range(6):
         i = 0
         while True:
             i += 1
-            self.logger.info(f"Deleting ad {i + 1}")
+            self.logger.info(f"Deleting ad {i}")
 
             stats = ads_page.delete_first_ad()
             if not stats:
                 break
-            self._process_stats(stats)
-            
-            # self.logger.info(f"Deleted {stats[adstats.TITLE]}")
-            filename = os.path.join(
-                self.title2dir[stats[adstats.TITLE]], KijijiReposter.STATS_FILENAME
-            )
-            is_file_exists = os.path.isfile(filename)
-            with open(filename, 'a') as f:
-                writer = csv.DictWriter(f, fieldnames=adstats.schema)
-                if not is_file_exists:
-                    writer.writeheader()
-                writer.writerow(stats)
+
+            if self.is_track:
+                self.write_stats(stats)
+                
 
     def cleanup(self):
         self.driver.delete_cookie(KijijiReposter.COOKIE_NAME)
@@ -222,6 +237,12 @@ if __name__ == '__main__':
         description="""Deletes all ads currently listed and reposts"""
     )
     
+    parser.add_argument('-c', '--cookie_file', 
+                        help="""Filename of text file containing SSID cookie used for signing in""", 
+                        required=True,
+                        default='',
+                        type=str)
+
     parser.add_argument('-r', '--rootdir', 
                         help="""Root directory containing ad config files in subdirectories""", 
                         required=False,
@@ -238,9 +259,25 @@ if __name__ == '__main__':
                         required=False,
                         action='store_true')
 
+    parser.add_argument('-t', '--track_stats', 
+                        help="""Flag for whether to track views/replies when ads are deleted""", 
+                        required=False,
+                        action='store_true')
+
+    parser.add_argument('-l', '--log_filename', 
+                        help="""File to log all events to""", 
+                        required=False,
+                        default='kijiji_reposter.log',
+                        type=str)
+
     arg = parser.parse_args()
 
-    kr = KijijiReposter()
+    kr = KijijiReposter(
+        cookie_filename=arg.cookie_file,
+        is_track=arg.track_stats,
+        log_filename=arg.log_filename
+    )
+
     kr.repost(
         rootdir=arg.rootdir,
         delete_all=arg.delete_all,
