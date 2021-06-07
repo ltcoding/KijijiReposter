@@ -12,38 +12,41 @@ Posting an ad requires a root directory containing all ads in its subdirectories
 should be present in each subdirectory (see example [ad\_config.yaml](example_ad/ad_config.yaml) file)
 
 ### Example Structure of Root Directory
+```
 rootdir
   |-ad1
-  |--- ad\_config.yaml
+  |--- ad_config.yaml
   |--- img1.jpg
   |--- img2.jpg
   |-ad2
-  |--- ad\_config.yaml
+  |--- ad_config.yaml
   |--- img1.jpg
   |--- img2.jpg
   |--- img3.jpg
-
+```
+  
 ### Cooke File
 A cookie file is needed to sign in.  The required cookie is named `ssid`. It can be found after signing in by opening
 Chrome Dev Tools and looking under `Application > Cookies > https://www.kijiji.ca/ > ssid`.  Copy its value and paste it into a text file
 
 ## Usage
-usage: kijiji\_reposter.py [-h] -c COOKIE\_FILE [-r ROOTDIR] [-d] [-p] [-t] [-l LOG\_FILENAME]
+```
+usage: kijiji_reposter.py [-h] -c COOKIE_FILE [-r ROOTDIR] [-d] [-p] [-t] [-l LOG_FILENAME]
 
 Deletes all ads currently listed and reposts
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c COOKIE\_FILE, --cookie\_file COOKIE\_FILE
+  -c COOKIE_FILE, --cookie_file COOKIE_FILE
                         Filename of text file containing SSID cookie used for signing in
   -r ROOTDIR, --rootdir ROOTDIR
                         Root directory containing ad config files in subdirectories
-  -d, --delete\_all      Flag to delete all currently posted ads
+  -d, --delete_all      Flag to delete all currently posted ads
   -p, --post            Flag to post ads
-  -t, --track\_stats     Flag for whether to track views/replies when ads are deleted
-  -l LOG\_FILENAME, --log\_filename LOG\_FILENAME
+  -t, --track_stats     Flag for whether to track views/replies when ads are deleted
+  -l LOG_FILENAME, --log_filename LOG_FILENAME
                         File to log all events to
-
+```
 
 ### Example
 Use `-d` and `-p` flags to separately delete all ads and post all ads respectively, e.g.,
